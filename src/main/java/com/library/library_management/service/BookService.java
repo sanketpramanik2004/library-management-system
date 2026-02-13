@@ -68,6 +68,14 @@ public class BookService {
         return "Book issued successfully!";
     }
 
+    public void deleteBook(Long id) {
+
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Book not found"));
+
+        bookRepository.delete(book);
+    }
+
     // ✅ RETURN BOOK + FINE CALCULATION
     public String returnBook(Long transactionId) {
 

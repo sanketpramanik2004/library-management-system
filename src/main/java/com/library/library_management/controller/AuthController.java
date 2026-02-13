@@ -1,9 +1,10 @@
 package com.library.library_management.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import com.library.library_management.entity.User;
 import com.library.library_management.repository.UserRepository;
 import com.library.library_management.security.JwtUtil;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,14 +27,20 @@ public class AuthController {
 
     // REGISTER
     @PostMapping("/register")
-    public String register(@RequestBody User user) {
+    public ResponseEntity<?> register(@RequestBody User user) {
+
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Username already exists!");
+        }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole("ROLE_USER");
 
         userRepository.save(user);
 
-        return "User registered successfully!";
+        return ResponseEntity.ok("User registered successfully!");
     }
 
     // LOGIN
@@ -47,7 +54,9 @@ public class AuthController {
             throw new RuntimeException("Invalid password");
         }
 
-        String token = jwtUtil.generateToken(existingUser.getUsername());
+        String token = jwtUtil.generateToken(
+                existingUser.getUsername(),
+                existingUser.getRole());
 
         Map<String, String> response = new HashMap<>();
         response.put("token", token);

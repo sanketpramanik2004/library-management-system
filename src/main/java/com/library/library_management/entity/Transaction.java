@@ -4,25 +4,35 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "transactions")
 public class Transaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // MANY transactions can belong to ONE book
     @ManyToOne
-    @JoinColumn(name = "book_id")
+    @JoinColumn(name = "book_id", nullable = false)
     private Book book;
 
-    private String borrowerName;
+    // MANY transactions can belong to ONE user
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private LocalDate issueDate;
+
+    private LocalDate dueDate;
 
     private LocalDate returnDate;
 
     private double fine;
 
-    // Getters & Setters
+    // Better than boolean because we may extend later
+    private String status; // ISSUED / RETURNED
+
+    // ===== GETTERS & SETTERS =====
 
     public Long getId() {
         return id;
@@ -36,12 +46,12 @@ public class Transaction {
         this.book = book;
     }
 
-    public String getBorrowerName() {
-        return borrowerName;
+    public User getUser() {
+        return user;
     }
 
-    public void setBorrowerName(String borrowerName) {
-        this.borrowerName = borrowerName;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public LocalDate getIssueDate() {
@@ -50,6 +60,14 @@ public class Transaction {
 
     public void setIssueDate(LocalDate issueDate) {
         this.issueDate = issueDate;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
     }
 
     public LocalDate getReturnDate() {
@@ -66,5 +84,13 @@ public class Transaction {
 
     public void setFine(double fine) {
         this.fine = fine;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

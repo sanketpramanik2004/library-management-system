@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h2>📚 Library System</h2>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<div class="dashboard-container">
+
+    <div class="header">
+        <h1>Available Books</h1>
+        <button id="addBookBtn" onclick="showAddBookForm()">+ Add Book</button>
+    </div>
+
+    <!-- Add Book Form -->
+    <div id="addBookForm" class="form-card" style="display:none;">
+        <h3>Add New Book</h3>
+
+        <input id="title" placeholder="Book Title">
+        <input id="author" placeholder="Author">
+        <input id="copies" type="number" placeholder="Available Copies">
+
+        <button onclick="addBook()">Add</button>
+    </div>
+
+    <!-- Books Grid -->
+    <div id="books-container" class="books-grid"></div>
+
+</div>
+
+<script src="js/app.js"></script>
+
+<script>
+
+window.onload = function(){
+
+    const token = localStorage.getItem("token");
+
+    if(!token){
+        window.location.href = "login.html";
+        return;
+    }
+
+    const payload = parseJwt(token);
+
+    // ⭐ DEBUG
+    console.log("ROLE:", payload.role);
+
+    if(payload.role !== "ROLE_ADMIN"){
+        document.getElementById("addBookBtn").style.display = "none";
+    }
+
+    fetchBooks();
+}
+
+</script>
+
+
+</body>
+</html>
