@@ -1,5 +1,6 @@
 package com.library.library_management.controller;
 
+import com.library.library_management.dto.BookDTO;
 import com.library.library_management.entity.Book;
 import com.library.library_management.service.BookService;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class BookController {
 
     // GET all books
     @GetMapping
-    public List<Book> getAllBooks() {
+    public List<BookDTO> getAllBooks() {
         return bookService.getAllBooks();
     }
 

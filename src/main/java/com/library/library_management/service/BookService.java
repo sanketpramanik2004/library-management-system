@@ -1,5 +1,6 @@
 package com.library.library_management.service;
 
+import com.library.library_management.dto.BookDTO;
 import com.library.library_management.entity.Book;
 import com.library.library_management.entity.Transaction;
 import com.library.library_management.exception.BookNotFoundException;
@@ -26,8 +27,15 @@ public class BookService {
     }
 
     // ✅ GET ALL BOOKS
-    public List<Book> getAllBooks() {
-        return bookRepository.findAll();
+    public List<BookDTO> getAllBooks() {
+
+        return bookRepository.findAll()
+                .stream()
+                .map(book -> new BookDTO(
+                        book.getId(),
+                        book.getTitle(),
+                        book.getAuthor()))
+                .toList();
     }
 
     // ✅ ADD BOOK
