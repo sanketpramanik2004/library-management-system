@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="navbar">
+
+    <h2>📚 Admin Panel</h2>
+
+    <div class="nav-right">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="mybooks.html">My Books</a>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+</div>
+
+<div class="dashboard-container">
+
+    <h1>Add New Book</h1>
+
+    <div class="form-card">
+
+        <input id="bookTitle" placeholder="Book Title">
+        <input id="bookAuthor" placeholder="Author">
+        <input id="bookCopies" type="number" placeholder="Available Copies">
+
+        <button onclick="addBook()">Add Book</button>
+
+    </div>
+
+    <h1>Library Statistics</h1>
+    <div id="stats-container" class="stats-container"></div>
+
+    <h1>All Transactions</h1>
+    <div id="admin-transactions" class="books-grid"></div>
+
+</div>
+
+
+<script src="js/app.js"></script>
+
+<script>
+window.onload = function(){
+
+    const token = localStorage.getItem("token");
+
+    if(!token){
+        window.location.href = "login.html";
+        return;
+    }
+
+    loadStats();              // ⭐ ADD THIS
+    loadAllTransactions();    // existing
+};
+</script>
+
+</body>
+</html>

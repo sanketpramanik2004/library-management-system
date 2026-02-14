@@ -16,38 +16,39 @@ public class BookController {
 
     private final BookService bookService;
 
-    // Constructor injection
     public BookController(BookService bookService) {
         this.bookService = bookService;
     }
 
-    // GET all books
+    // GET ALL BOOKS
     @GetMapping
     public List<BookDTO> getAllBooks() {
         return bookService.getAllBooks();
     }
 
-    // ADD a book
+    // ADD BOOK
     @PostMapping("/add")
     public Book addBook(@RequestBody Book book) {
         return bookService.addBook(book);
     }
 
-    @GetMapping("/issue")
-    public String issueBook(@RequestParam Long bookId,
-            @RequestParam String borrowerName) {
+    // DELETE BOOK
 
-        return bookService.issueBook(bookId, borrowerName);
-    }
+    // SEARCH BOOKS
+    @GetMapping("/search")
+    public List<Book> searchBooks(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String isbn) {
 
-    @GetMapping("/return")
-    public String returnBook(@RequestParam Long transactionId) {
-
-        return bookService.returnBook(transactionId);
+        return bookService.searchBooks(title, author, category, isbn);
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteBook(@PathVariable Long id) {
+
+        System.out.println("DELETE BOOK ID = " + id);
 
         bookService.deleteBook(id);
 

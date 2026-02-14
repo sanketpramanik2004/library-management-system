@@ -2,31 +2,26 @@ package com.library.library_management.service;
 
 import com.library.library_management.dto.BookDTO;
 import com.library.library_management.entity.Book;
-import com.library.library_management.entity.Transaction;
-import com.library.library_management.exception.BookNotFoundException;
 import com.library.library_management.repository.BookRepository;
-import com.library.library_management.repository.TransactionRepository;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
 public class BookService {
 
     private final BookRepository bookRepository;
-    private final TransactionRepository transactionRepository;
 
-    // ⭐ Constructor Injection (Industry Standard)
-    public BookService(BookRepository bookRepository,
-            TransactionRepository transactionRepository) {
+    // ✅ Constructor Injection
+    public BookService(BookRepository bookRepository) {
         this.bookRepository = bookRepository;
-        this.transactionRepository = transactionRepository;
     }
 
-    // ✅ GET ALL BOOKS
+    // =====================================================
+    // ✅ GET ALL BOOKS (DTO RESPONSE)
+    // =====================================================
     public List<BookDTO> getAllBooks() {
 
         return bookRepository.findAll()
@@ -38,76 +33,62 @@ public class BookService {
                 .toList();
     }
 
-    // ✅ ADD BOOK
+    // =====================================================
+    // ✅ ADD BOOK (ADMIN)
+    // =====================================================
     public Book addBook(Book book) {
+
+        if (book.getAvailableCopies() <= 0) {
+            book.setAvailableCopies(1);
+        }
+
         return bookRepository.save(book);
     }
 
-    // ✅ ISSUE BOOK (Using Relationship)
-    public String issueBook(Long bookId, String borrowerName) {
-
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new BookNotFoundException("Book not found with id: " + bookId));
-
-        if (book.getAvailableCopies() <= 0) {
-            throw new RuntimeException("No copies available for this book");
-        }
-
-        // Reduce available copies
-        book.setAvailableCopies(book.getAvailableCopies() - 1);
-        bookRepository.save(book);
-
-        // Create transaction
-        Transaction transaction = new Transaction();
-        transaction.setBook(book); // ⭐ Relationship instead of bookId
-        transaction.setBorrowerName(borrowerName);
-        transaction.setIssueDate(LocalDate.now());
-
-        transactionRepository.save(transaction);
-
-        return "Book issued successfully!";
-    }
-
+    // =====================================================
+    // ✅ DELETE BOOK (ADMIN)
+    // =====================================================
     public void deleteBook(Long id) {
 
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+                .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
 
         bookRepository.delete(book);
     }
 
-    // ✅ RETURN BOOK + FINE CALCULATION
-    public String returnBook(Long transactionId) {
+    // =====================================================
+    // ✅ SEARCH BOOKS (ADVANCED FILTERS)
+    // =====================================================
+    public List<Book> searchBooks(
+            String title,
+            String author,
+            String category,
+            String isbn) {
 
-        Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+        Specification<Book> spec = (root, query, cb) -> cb.conjunction();
 
-        if (transaction.getReturnDate() != null) {
-            throw new RuntimeException("Book already returned");
+        if (title != null && !title.isEmpty()) {
+            spec = spec.and((root, query, cb) -> cb.like(
+                    cb.lower(root.get("title")),
+                    "%" + title.toLowerCase() + "%"));
         }
 
-        LocalDate today = LocalDate.now();
-        transaction.setReturnDate(today);
-
-        long daysBetween = ChronoUnit.DAYS
-                .between(transaction.getIssueDate(), today);
-
-        // Fine rule: ₹2 per day after 7 days
-        if (daysBetween > 7) {
-            double fine = (daysBetween - 7) * 2;
-            transaction.setFine(fine);
-        } else {
-            transaction.setFine(0);
+        if (author != null && !author.isEmpty()) {
+            spec = spec.and((root, query, cb) -> cb.like(
+                    cb.lower(root.get("author")),
+                    "%" + author.toLowerCase() + "%"));
         }
 
-        transactionRepository.save(transaction);
+        if (category != null && !category.isEmpty()) {
+            spec = spec.and((root, query, cb) -> cb.equal(
+                    cb.lower(root.get("category")),
+                    category.toLowerCase()));
+        }
 
-        // ⭐ No need to fetch book again!
-        Book book = transaction.getBook();
+        if (isbn != null && !isbn.isEmpty()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("isbn"), isbn));
+        }
 
-        book.setAvailableCopies(book.getAvailableCopies() + 1);
-        bookRepository.save(book);
-
-        return "Book returned successfully. Fine: ₹" + transaction.getFine();
+        return bookRepository.findAll(spec);
     }
 }

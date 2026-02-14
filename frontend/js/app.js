@@ -1,211 +1,509 @@
-const BASE_URL = "http://localhost:8081";
+const API = "http://localhost:8081";
 
-function login(){
-
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-
-    fetch(BASE_URL + "/auth/login", {
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body: JSON.stringify({
-            username,
-            password
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-
-        if(data.token){
-
-            localStorage.setItem("token", data.token);
-
-            window.location.href = "dashboard.html";
-
-        }else{
-            document.getElementById("message").innerText = "Invalid credentials";
-        }
-    })
-    .catch(()=>{
-        document.getElementById("message").innerText = "Server error";
-    });
+/* ================= PASSWORD TOGGLE ================= */
+function togglePassword(){
+    const input = document.getElementById("password");
+    input.type = input.type === "password" ? "text" : "password";
 }
 
+/* ================= JWT PARSER ================= */
 function parseJwt(token){
     return JSON.parse(atob(token.split('.')[1]));
 }
 
+/* ================= LOGIN ================= */
+async function login(){
 
-function fetchBooks(){
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const remember = document.getElementById("rememberMe").checked;
+    const message = document.getElementById("message");
+
+    if(!username || !password){
+        message.innerText = "Enter credentials";
+        return;
+    }
+
+    try{
+
+        const res = await fetch(API + "/auth/login",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({username,password})
+        });
+
+        if(!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        localStorage.setItem("token",data.token);
+
+        const payload = parseJwt(data.token);
+        localStorage.setItem("role",payload.role);
+
+        if(remember){
+            localStorage.setItem("savedUsername",username);
+            localStorage.setItem("savedPassword",password);
+        }
+
+        window.location.href="dashboard.html";
+
+    }catch{
+        message.innerText="Invalid login";
+    }
+}
+
+/* ================= AUTO FILL ================= */
+document.addEventListener("DOMContentLoaded",()=>{
+
+    // ---------- Autofill ----------
+    const u = localStorage.getItem("savedUsername");
+    const p = localStorage.getItem("savedPassword");
+
+    if(u){
+        document.getElementById("username").value = u;
+        document.getElementById("password").value = p;
+        document.getElementById("rememberMe").checked = true;
+    }
+
+    // ---------- ENTER KEY LOGIN ----------
+    document.addEventListener("keydown", function(event){
+        if(event.key === "Enter"){
+            login();
+        }
+    });
+
+});
+
+function initDashboard(){
 
     const token = localStorage.getItem("token");
 
-    const payload = parseJwt(token);   // ⭐ decode role
-    console.log("ROLE:", payload.role);
+    if(!token){
+        window.location.href="login.html";
+        return;
+    }
 
-    fetch("http://localhost:8081/books", {
+    showRole();
+    loadBooks();
+}
 
+function getRole(){
+    return localStorage.getItem("role") || "";
+}
+
+function isAdmin(){
+    return getRole().includes("ADMIN");
+}
+
+function showRole(){
+    const adminLink = document.getElementById("adminLink");
+if(adminLink && !isAdmin()){
+    adminLink.style.display="none";
+}
+
+    const label = document.getElementById("roleLabel");
+
+    if(label){
+        label.innerText = isAdmin()
+            ? "Admin"
+            : "User";
+    }
+}
+
+function loadBooks(){
+
+    fetch(API + "/books",{
         headers:{
-            "Authorization": "Bearer " + token
+            "Authorization":"Bearer " + localStorage.getItem("token")
+        }
+    })
+    .then(res=>{
+        if(res.status===401) logout();
+        return res.json();
+    })
+    .then(books => renderBooks(books));
+}
+
+function renderBooks(data){
+
+    const container =
+        document.getElementById("books-container");
+
+    container.innerHTML = "";
+
+    data.forEach(book => {
+
+        let buttons = "";
+
+        if(!isAdmin()){
+            buttons += `
+                <button class="action-btn"
+                onclick="issueBook(${book.id})">
+                Issue
+                </button>`;
+        }
+
+        if(isAdmin()){
+            buttons += `
+                <button class="delete-btn"
+                onclick="deleteBook(${book.id})">
+                Delete
+                </button>`;
+        }
+
+        container.innerHTML += `
+            <div class="book-card">
+                <h3>${book.title}</h3>
+                <p>${book.author}</p>
+                ${buttons}
+            </div>
+        `;
+    });
+}
+function searchBooks(){
+
+    const token = localStorage.getItem("token");
+
+    const title =
+        document.getElementById("titleFilter").value;
+
+    const author =
+        document.getElementById("authorFilter").value;
+
+    const category =
+        document.getElementById("categoryFilter").value;
+
+    const isbn =
+        document.getElementById("isbnFilter").value;
+
+    const params = new URLSearchParams();
+
+    if(title) params.append("title", title);
+    if(author) params.append("author", author);
+    if(category) params.append("category", category);
+    if(isbn) params.append("isbn", isbn);
+
+    fetch(API + "/books/search?" + params.toString(),{
+        headers:{
+            "Authorization":"Bearer " + token
         }
     })
     .then(res => res.json())
-    .then(data => {
+    .then(data => renderBooks(data))
+    .catch(err => console.error(err));
+}
 
-        const container = document.getElementById("books-container");
-        container.innerHTML = "";
 
-        data.forEach(book => {
+function issueBook(id){
 
-            // ⭐ create delete button ONLY for admin
-            let deleteButton = "";
+    fetch(API + "/transactions/issue/" + id,{
+        method:"POST",
+        headers:{
+            "Authorization":
+            "Bearer " + localStorage.getItem("token")
+        }
+    })
+    .then(()=>{
+        alert("Book Issued Successfully");
 
-            if(payload.role === "ROLE_ADMIN"){
-                deleteButton = `
-                    <button 
-                        onclick="deleteBook(${book.id})"
-                        style="margin-top:10px;
-                               background:red;
-                               color:white;
-                               border:none;
-                               padding:8px;
-                               border-radius:6px;
-                               cursor:pointer;">
-                        Delete
-                    </button>
-                `;
-            }
+        loadBooks();   // refresh books
+        loadStats();   // ⭐ refresh admin stats
+    });
+}
+
+
+function deleteBook(id){
+
+    fetch(API + "/books/delete/" + id,{
+        method:"DELETE",
+        headers:{
+            "Authorization":
+            "Bearer " + localStorage.getItem("token")
+        }
+    })
+    .then(()=>{
+        alert("Book Deleted");
+
+        loadBooks();
+        loadStats();   // ⭐ refresh stats
+    });
+}
+
+
+
+
+function logout(){
+    localStorage.clear();
+    window.location.href="login.html";
+}
+
+function initMyBooks(){
+
+    const token = localStorage.getItem("token");
+
+    if(!token){
+        window.location.href="login.html";
+        return;
+    }
+
+    loadMyBooks();
+}
+
+function loadMyBooks(){
+
+    fetch(API + "/transactions/my-books",{
+        headers:{
+            "Authorization":"Bearer " + localStorage.getItem("token")
+        }
+    })
+    .then(res=>{
+        if(res.status===401) logout();
+        return res.json();
+    })
+    .then(transactions=>{
+
+        const container =
+            document.getElementById("my-books-container");
+
+        container.innerHTML="";
+
+        if(transactions.length===0){
+            container.innerHTML="<p>No books issued.</p>";
+            return;
+        }
+
+        transactions.forEach(t=>{
 
             container.innerHTML += `
                 <div class="book-card">
-                    <h3>${book.title}</h3>
-                    <p>Author: ${book.author}</p>
-                    ${deleteButton}
+                    <h3>${t.book.title}</h3>
+                    <p>Author: ${t.book.author}</p>
+
+                    <p>Issued: ${t.issueDate}</p>
+                    <p>Due: ${t.dueDate}</p>
+
+                    <p>Fine: ₹${t.fine}</p>
+
+                    ${
+                        t.status === "ISSUED"
+                        ? `<button class="return-btn"
+                             onclick="returnBook(${t.id})">
+                             Return Book
+                           </button>`
+                        : `<p>Returned ✅</p>`
+                    }
                 </div>
             `;
         });
     });
 }
 
+function returnBook(transactionId){
 
-function logout(){
+    fetch(API + "/transactions/return/" + transactionId,{
+        method:"POST",
+        headers:{
+            "Authorization":
+            "Bearer " + localStorage.getItem("token")
+        }
+    })
+    .then(()=>{
+        alert("Book Returned");
 
-    localStorage.removeItem("token");
-
-    window.location.href = "login.html";
+        loadMyBooks();
+        loadHistory();
+        loadStats();   // ⭐ update stats
+    });
 }
 
-function showAddBookForm(){
-    document.getElementById("addBookForm").style.display = "block";
+
+function initAdmin(){
+
+    if(!isAdmin()){
+        alert("Access denied");
+        window.location.href="dashboard.html";
+        return;
+    }
+
+    loadStats();
+    loadAllTransactions();
+}
+
+function loadStats(){
+
+    fetch(API + "/transactions/stats",{
+        headers:{
+            "Authorization":"Bearer " +
+            localStorage.getItem("token")
+        }
+    })
+    .then(res => {
+        if(!res.ok){
+            throw new Error("Stats request failed");
+        }
+        return res.json();
+    })
+    .then(stats => {
+
+        console.log("Stats received:", stats);
+
+        // ✅ Map backend fields correctly
+        const totalBooks = stats.totalBooks ?? 0;
+        const issuedBooks = stats.activeLoans ?? 0;
+        const returnedBooks = totalBooks - issuedBooks;
+        const totalFine = stats.totalFine ?? 0;
+
+        document.getElementById("stats-container").innerHTML = `
+            <div class="stat-card">
+                <h3>Total Books</h3>
+                <p>${totalBooks}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Issued Books</h3>
+                <p>${issuedBooks}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Returned Books</h3>
+                <p>${returnedBooks}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Total Fine</h3>
+                <p>₹${totalFine}</p>
+            </div>
+        `;
+    })
+    .catch(err => console.error("Stats error:", err));
+}
+
+function loadAllTransactions(){
+
+    fetch(API + "/transactions/all",{
+        headers:{
+            "Authorization":"Bearer " +
+            localStorage.getItem("token")
+        }
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        const container =
+            document.getElementById("admin-transactions");
+
+        container.innerHTML="";
+
+        data.forEach(t=>{
+
+            container.innerHTML += `
+                <div class="book-card">
+                    <h3>${t.book.title}</h3>
+
+                    <p>User: ${t.user.username}</p>
+                    <p>Issued: ${t.issueDate}</p>
+                    <p>Due: ${t.dueDate}</p>
+                    <p>Status: ${t.status}</p>
+                    <p>Fine: ₹${t.fine}</p>
+                </div>
+            `;
+        });
+    });
 }
 
 function addBook(){
 
-    const token = localStorage.getItem("token");
+    const title =
+        document.getElementById("bookTitle").value;
 
-    fetch("http://127.0.0.1:8081/books/add",{
+    const author =
+        document.getElementById("bookAuthor").value;
 
+    const copies =
+        document.getElementById("bookCopies").value;
+
+    if(!title || !author || !copies){
+        alert("Fill all fields");
+        return;
+    }
+
+    fetch(API + "/books/add",{
         method:"POST",
-
         headers:{
             "Content-Type":"application/json",
-            "Authorization":"Bearer " + token
+            "Authorization":"Bearer " +
+            localStorage.getItem("token")
         },
-
-        body: JSON.stringify({
-            title: document.getElementById("title").value,
-            author: document.getElementById("author").value,
-            availableCopies: document.getElementById("copies").value
+        body:JSON.stringify({
+            title:title,
+            author:author,
+            availableCopies:copies
         })
     })
-    .then(res => {
-
-        if(res.status === 403){
-            alert("Only ADMIN can add books!");
-            return;
-        }
-
+    .then(res=>{
+        if(!res.ok) throw new Error();
         return res.json();
     })
-    .then(() => {
+    .then(()=>{
+        alert("Book added successfully!");
 
-        fetchBooks();
+        document.getElementById("bookTitle").value="";
+        document.getElementById("bookAuthor").value="";
+        document.getElementById("bookCopies").value="";
 
-        document.getElementById("addBookForm").style.display = "none";
-    });
-}
-
-function deleteBook(id){
-
-    const token = localStorage.getItem("token");
-
-    fetch(`http://127.0.0.1:8081/books/delete/${id}`,{
-
-        method:"DELETE",
-
-        headers:{
-            "Authorization":"Bearer " + token
-        }
-
+        loadBooks();      // refresh dashboard books
+        loadStats();      // refresh stats
     })
-    .then(res => {
-
-        console.log("DELETE STATUS:", res.status);
-
-        if(res.status === 403){
-            alert("Only ADMIN can delete!");
-            return;
-        }
-
-        fetchBooks(); // reload books
-    });
+    .catch(()=>alert("Failed to add book"));
 }
 
+function loadHistory(){
 
-function parseJwt(token){
-
-    return JSON.parse(atob(token.split('.')[1]));
-}
-
-function register(){
-
-    const username = document.getElementById("regUsername").value;
-    const password = document.getElementById("regPassword").value;
-
-    fetch("http://127.0.0.1:8081/auth/register", {
-
-        method:"POST",
+    fetch(API + "/transactions/my-books",{
         headers:{
-            "Content-Type":"application/json"
-        },
-        body: JSON.stringify({ username, password })
-
+            "Authorization":
+            "Bearer " + localStorage.getItem("token")
+        }
     })
-    .then(async res => {
+    .then(res=>{
+        if(res.status===401) logout();
+        return res.json();
+    })
+    .then(transactions=>{
 
-        const message = await res.text();
+        const container =
+            document.getElementById("history-container");
 
-        if(res.status === 200){
+        container.innerHTML="";
 
-            document.getElementById("regMessage").style.color = "green";
-            document.getElementById("regMessage").innerText = message;
+        transactions.forEach(tx=>{
 
-            setTimeout(() => {
-                window.location.href = "login.html";
-            }, 1500);
+            const statusClass =
+                tx.status === "RETURNED"
+                ? "status-returned"
+                : "status-issued";
 
-        } 
-        else if(res.status === 409){
+            container.innerHTML += `
+                <div class="history-card">
 
-            document.getElementById("regMessage").style.color = "red";
-            document.getElementById("regMessage").innerText = message;
-        }
-        else{
+                    <h3>${tx.book.title}</h3>
 
-            document.getElementById("regMessage").innerText = "Something went wrong.";
-        }
-    });
+                    <p><b>Issued:</b> ${tx.issueDate}</p>
+                    <p><b>Due:</b> ${tx.dueDate}</p>
+                    <p><b>Returned:</b>
+                        ${tx.returnDate ? tx.returnDate : "Not returned"}
+                    </p>
+
+                    <p class="${statusClass}">
+                        ${tx.status}
+                    </p>
+
+                    <p><b>Fine:</b> ₹${tx.fine}</p>
+
+                </div>
+            `;
+        });
+    })
+    .catch(err=>console.error(err));
 }
-

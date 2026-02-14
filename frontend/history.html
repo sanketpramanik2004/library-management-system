@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Borrowing History</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <h2>📚 Library</h2>
+
+    <div class="nav-right">
+        <a href="dashboard.html">Home</a>
+        <a href="mybooks.html">My Books</a>
+        <a href="history.html">History</a>
+        <button onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="dashboard-container">
+
+    <h1>Borrowing History</h1>
+
+    <div id="history-container" class="books-grid"></div>
+
+</div>
+
+<script src="js/app.js"></script>
+
+<script>
+window.onload = function(){
+    loadHistory();
+};
+</script>
+
+</body>
+</html>

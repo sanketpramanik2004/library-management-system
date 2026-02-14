@@ -31,43 +31,49 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
 
+                // ✅ Enable CORS
                 .cors(cors -> {
-                }) // ⭐ Enable CORS
+                })
 
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // ✅ Stateless JWT authentication
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+
+                        // ================= AUTH =================
                         .requestMatchers("/auth/**").permitAll()
 
-                        // ADMIN only
-                        .requestMatchers("/books/add").permitAll()
+                        // ================= ADMIN ONLY =================
+                        .requestMatchers("/books/add").hasRole("ADMIN")
                         .requestMatchers("/books/delete/**").hasRole("ADMIN")
 
-                        // USER + ADMIN
+                        // ⭐ Admin monitoring dashboard
+                        .requestMatchers("/transactions/all").hasRole("ADMIN")
+
+                        // ================= USER + ADMIN =================
                         .requestMatchers("/books/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/transactions/stats").hasRole("ADMIN")
+                        .requestMatchers("/transactions/**").hasAnyRole("USER", "ADMIN")
 
-                        .requestMatchers("/transactions/**")
-                        .hasAnyRole("USER", "ADMIN")
-
+                        // ================= DEFAULT =================
                         .anyRequest().authenticated())
 
                 .formLogin(form -> form.disable())
                 .httpBasic(httpBasic -> httpBasic.disable());
 
-        // ⭐ Attach JWT filter
+        // ✅ Attach JWT Filter
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // ⭐ Password Encoder
+    // ================= PASSWORD ENCODER =================
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ⭐ CORS Configuration (VERY IMPORTANT for frontend)
+    // ================= CORS CONFIG =================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 

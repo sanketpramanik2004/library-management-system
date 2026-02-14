@@ -8,10 +8,12 @@ import com.library.library_management.repository.TransactionRepository;
 import com.library.library_management.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.library.library_management.dto.DashboardStatsDTO;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.List;
 
 @Service
 public class TransactionService {
@@ -100,4 +102,35 @@ public class TransactionService {
 
         return "Book returned successfully!";
     }
+
+    public List<Transaction> getUserTransactions(String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return transactionRepository.findByUser(user);
+    }
+
+    public List<Transaction> getAllTransactions() {
+        return transactionRepository.findAll();
+    }
+
+    public DashboardStatsDTO getDashboardStats() {
+
+        DashboardStatsDTO stats = new DashboardStatsDTO();
+
+        stats.setTotalBooks(bookRepository.count());
+
+        stats.setIssuedBooks(
+                transactionRepository.countByStatus("ISSUED"));
+
+        stats.setReturnedBooks(
+                transactionRepository.countByStatus("RETURNED"));
+
+        stats.setTotalFine(
+                transactionRepository.sumTotalFine());
+
+        return stats;
+    }
+
 }

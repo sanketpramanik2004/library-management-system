@@ -1,35 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Library Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
+<!-- NAVBAR -->
 <div class="navbar">
-    <h2>📚 Library System</h2>
-    <button onclick="logout()">Logout</button>
+
+    <h2>📚 Library</h2>
+
+    <div class="nav-right">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="mybooks.html">My Books</a>
+        <a href="history.html">History</a>
+        <a id="adminLink" href="admin.html">Admin</a>
+
+        <span id="roleLabel"></span>
+
+        <button onclick="logout()">Logout</button>
+    </div>
+
 </div>
 
+
+<!-- CONTENT -->
 <div class="dashboard-container">
 
-    <div class="header">
-        <h1>Available Books</h1>
-        <button id="addBookBtn" onclick="showAddBookForm()">+ Add Book</button>
-    </div>
+    <h1>Available Books</h1>
+<!-- SEARCH BAR -->
+<div class="search-panel">
 
-    <!-- Add Book Form -->
-    <div id="addBookForm" class="form-card" style="display:none;">
-        <h3>Add New Book</h3>
+    <input id="titleFilter" placeholder="Search by Title">
+    <input id="authorFilter" placeholder="Author">
+    <input id="categoryFilter" placeholder="Category">
+    <input id="isbnFilter" placeholder="ISBN">
 
-        <input id="title" placeholder="Book Title">
-        <input id="author" placeholder="Author">
-        <input id="copies" type="number" placeholder="Available Copies">
+    <button onclick="searchBooks()">Search</button>
+    <button onclick="loadBooks()">Reset</button>
 
-        <button onclick="addBook()">Add</button>
-    </div>
+</div>
 
-    <!-- Books Grid -->
     <div id="books-container" class="books-grid"></div>
 
 </div>
@@ -37,30 +52,8 @@
 <script src="js/app.js"></script>
 
 <script>
-
-window.onload = function(){
-
-    const token = localStorage.getItem("token");
-
-    if(!token){
-        window.location.href = "login.html";
-        return;
-    }
-
-    const payload = parseJwt(token);
-
-    // ⭐ DEBUG
-    console.log("ROLE:", payload.role);
-
-    if(payload.role !== "ROLE_ADMIN"){
-        document.getElementById("addBookBtn").style.display = "none";
-    }
-
-    fetchBooks();
-}
-
+window.onload = initDashboard;
 </script>
-
 
 </body>
 </html>

@@ -12,6 +12,8 @@ public class Book {
     private String title;
     private String author;
     private int availableCopies;
+    private String category;
+    private String isbn;
 
     // GETTERS & SETTERS
 
@@ -42,4 +44,21 @@ public class Book {
     public void setAvailableCopies(int availableCopies) {
         this.availableCopies = availableCopies;
     }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getIsbn() {
+        return isbn;
+    }
+
+    public void setIsbn(String isbn) {
+        this.isbn = isbn;
+    }
+
 }

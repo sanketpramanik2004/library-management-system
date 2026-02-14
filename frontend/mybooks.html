@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Books</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <h2>📚 Library</h2>
+
+    <div class="nav-right">
+        <a href="dashboard.html">Dashboard</a>
+        <button onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="dashboard-container">
+
+    <h1>My Issued Books</h1>
+
+    <div id="my-books-container" class="books-grid"></div>
+
+</div>
+
+<script src="js/app.js"></script>
+
+<script>
+window.onload = initMyBooks;
+</script>
+
+</body>
+</html>
