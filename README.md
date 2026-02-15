@@ -61,8 +61,27 @@ Backend:
 Frontend:
 Open `login.html` using Live Server.
 
+
+## How to Run
+
+1. Install Java, Maven and MySQL
+2. Create database:
+
+   CREATE DATABASE library_db;
+
+3. Update application.properties with your MySQL password
+
+4. Run backend:
+
+   mvn spring-boot:run
+
+5. Open frontend using Live Server:
+
+   login.html
+
 ---
 
 ## 👨‍💻 Author
 Sanket Pramanik
+
 
