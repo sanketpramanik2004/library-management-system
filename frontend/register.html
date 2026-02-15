@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="login-card">
+
+        <h1>📚 Library System</h1>
+        <h3>Create Account</h3>
+
+        <input id="regUsername" placeholder="Username">
+
+        <div class="password-wrapper">
+            <input type="password" id="regPassword" placeholder="Password">
+            <button class="eye-btn" onclick="toggleRegisterPassword()">👁</button>
+        </div>
+
+        <button class="login-btn" onclick="registerUser()">Register</button>
+
+        <p id="registerMessage"></p>
+
+        <span>
+            Already have an account?
+            <a href="login.html">Login</a>
+        </span>
+
+    </div>
+
+</div>
+
+<script src="js/app.js"></script>
+
+<script>
+document.addEventListener("keydown", e=>{
+    if(e.key==="Enter") registerUser();
+});
+</script>
+
+</body>
+</html>

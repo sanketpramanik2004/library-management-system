@@ -9,16 +9,21 @@
 <body>
 
 <div class="navbar">
-
-    <h2>📚 Admin Panel</h2>
+<div class="nav-left">
+        📚 <span>Library</span>
+    </div>
+    
 
     <div class="nav-right">
-        <a href="dashboard.html">Dashboard</a>
-        <a href="mybooks.html">My Books</a>
-        <button onclick="logout()">Logout</button>
+     <a href="dashboard.html" class="nav-btn">Dashboard</a>
+         <a id="adminLink" href="admin.html" class="nav-btn admin-btn">
+            Admin
+        </a>
+         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
 </div>
+
 
 <div class="dashboard-container">
 
@@ -37,6 +42,11 @@
     <h1>Library Statistics</h1>
     <div id="stats-container" class="stats-container"></div>
 
+    <h2>📖 Library History</h2>
+
+<div id="admin-history" class="books-grid"></div>
+
+
     <h1>All Transactions</h1>
     <div id="admin-transactions" class="books-grid"></div>
 
@@ -48,17 +58,19 @@
 <script>
 window.onload = function(){
 
-    const token = localStorage.getItem("token");
+    // Initial load
+    loadStats();
+    loadAllTransactions();
 
-    if(!token){
-        window.location.href = "login.html";
-        return;
-    }
-
-    loadStats();              // ⭐ ADD THIS
-    loadAllTransactions();    // existing
+    // Auto refresh dashboard every 10 seconds
+    setInterval(() => {
+        loadStats();
+        loadAllTransactions();   // ⭐ also refresh history
+    }, 10000);
 };
 </script>
+
+
 
 </body>
 </html>

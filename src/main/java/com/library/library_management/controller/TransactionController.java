@@ -38,7 +38,7 @@ public class TransactionController {
 
         String username = authentication.getName();
 
-        return transactionService.getUserTransactions(username);
+        return transactionService.getIssuedBooks(username);
     }
 
     @GetMapping("/all")
@@ -49,6 +49,14 @@ public class TransactionController {
     @GetMapping("/stats")
     public DashboardStatsDTO getStats() {
         return transactionService.getDashboardStats();
+    }
+
+    @GetMapping("/history")
+    public List<Transaction> getHistory(Authentication authentication) {
+
+        String username = authentication.getName();
+
+        return transactionService.getUserTransactions(username);
     }
 
 }

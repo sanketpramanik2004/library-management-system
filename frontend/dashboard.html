@@ -11,18 +11,27 @@
 
 <!-- NAVBAR -->
 <div class="navbar">
-
-    <h2>📚 Library</h2>
+<div class="nav-left">
+        📚 <span>Library</span>
+    </div>
+    
 
     <div class="nav-right">
-        <a href="dashboard.html">Dashboard</a>
-        <a href="mybooks.html">My Books</a>
-        <a href="history.html">History</a>
-        <a id="adminLink" href="admin.html">Admin</a>
+        <a href="dashboard.html" class="nav-btn">Dashboard</a>
 
-        <span id="roleLabel"></span>
+        <!-- ⭐ ADD IDS -->
+        <a id="myBooksLink" href="mybooks.html" class="nav-btn">
+            My Books
+        </a>
+        <a id="historyLink" href="history.html" class="nav-btn">
+            History
+        </a>
 
-        <button onclick="logout()">Logout</button>
+       <a id="adminLink" href="admin.html" class="nav-btn admin-btn">
+            Admin
+        </a>
+        <span id="roleLabel" class="role-badge"></span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
 </div>
@@ -32,18 +41,19 @@
 <div class="dashboard-container">
 
     <h1>Available Books</h1>
-<!-- SEARCH BAR -->
-<div class="search-panel">
 
-    <input id="titleFilter" placeholder="Search by Title">
-    <input id="authorFilter" placeholder="Author">
-    <input id="categoryFilter" placeholder="Category">
-    <input id="isbnFilter" placeholder="ISBN">
+    <!-- SEARCH -->
+    <div class="search-panel">
 
-    <button onclick="searchBooks()">Search</button>
-    <button onclick="loadBooks()">Reset</button>
+        <input id="titleFilter" placeholder="Search by Title">
+        <input id="authorFilter" placeholder="Author">
+        <input id="categoryFilter" placeholder="Category">
+        <input id="isbnFilter" placeholder="ISBN">
 
-</div>
+        <button onclick="searchBooks()">Search</button>
+        <button onclick="loadBooks()">Reset</button>
+
+    </div>
 
     <div id="books-container" class="books-grid"></div>
 

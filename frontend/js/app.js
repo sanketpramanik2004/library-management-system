@@ -75,6 +75,22 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 });
 
+function setupNavbarByRole(){
+
+    const adminLink=document.getElementById("adminLink");
+    const myBooksLink=document.getElementById("myBooksLink");
+    const historyLink=document.getElementById("historyLink");
+
+    if(isAdmin()){
+        if(myBooksLink) myBooksLink.style.display="none";
+        if(historyLink) historyLink.style.display="none";
+    }else{
+        if(adminLink) adminLink.style.display="none";
+    }
+
+    const label=document.getElementById("roleLabel");
+    if(label) label.innerText=isAdmin()?"Admin":"User";
+}
 function initDashboard(){
 
     const token = localStorage.getItem("token");
@@ -84,9 +100,17 @@ function initDashboard(){
         return;
     }
 
-    showRole();
+   setupNavbarByRole();
     loadBooks();
 }
+function refreshAdminDashboard(){
+
+    if(isAdmin()){
+        loadStats();
+        loadAllTransactions?.();
+    }
+}
+
 
 function getRole(){
     return localStorage.getItem("role") || "";
@@ -205,12 +229,13 @@ function issueBook(id){
         }
     })
     .then(()=>{
-        alert("Book Issued Successfully");
+        alert("Book Issued");
 
-        loadBooks();   // refresh books
-        loadStats();   // ⭐ refresh admin stats
+        loadBooks();
+        refreshAdminDashboard(); // ⭐
     });
 }
+
 
 
 function deleteBook(id){
@@ -226,9 +251,10 @@ function deleteBook(id){
         alert("Book Deleted");
 
         loadBooks();
-        loadStats();   // ⭐ refresh stats
+        refreshAdminDashboard(); // ⭐
     });
 }
+
 
 
 
@@ -311,11 +337,12 @@ function returnBook(transactionId){
     .then(()=>{
         alert("Book Returned");
 
-        loadMyBooks();
-        loadHistory();
-        loadStats();   // ⭐ update stats
+        loadMyBooks?.();
+        loadHistory?.();
+        refreshAdminDashboard(); // ⭐
     });
 }
+
 
 
 function initAdmin(){
@@ -460,7 +487,7 @@ function addBook(){
 
 function loadHistory(){
 
-    fetch(API + "/transactions/my-books",{
+    fetch(API + "/transactions/history",{
         headers:{
             "Authorization":
             "Bearer " + localStorage.getItem("token")
@@ -507,3 +534,146 @@ function loadHistory(){
     })
     .catch(err=>console.error(err));
 }
+function loadAllTransactions(){
+
+    fetch(API + "/transactions/all",{
+        headers:{
+            "Authorization":
+            "Bearer " + localStorage.getItem("token")
+        }
+    })
+    .then(res => res.json())
+    .then(transactions => {
+
+        const container =
+            document.getElementById("admin-history");
+
+        if(!container) return;
+
+        container.innerHTML = "";
+
+        /* ================= GROUP BY USER ================= */
+
+        const grouped = {};
+
+        transactions.forEach(tx => {
+
+            const username = tx.user.username;
+
+            if(!grouped[username]){
+                grouped[username] = [];
+            }
+
+            grouped[username].push(tx);
+        });
+
+        /* ================= RENDER USERS ================= */
+
+        Object.keys(grouped).forEach(username => {
+
+            // USER HEADER
+            container.innerHTML += `
+                <div class="user-section">
+                    <h2 class="user-title">👤 ${username}</h2>
+                    <div class="user-transactions" id="user-${username}">
+                    </div>
+                </div>
+            `;
+
+            const userBox =
+                document.getElementById(`user-${username}`);
+
+            grouped[username].forEach(tx => {
+
+                const statusClass =
+                    tx.status === "RETURNED"
+                    ? "status-returned"
+                    : "status-issued";
+
+                userBox.innerHTML += `
+                    <div class="history-card">
+
+                        <h3>${tx.book.title}</h3>
+
+                        <p><b>Issued:</b> ${tx.issueDate}</p>
+                        <p><b>Due:</b> ${tx.dueDate}</p>
+
+                        <p><b>Returned:</b>
+                            ${tx.returnDate ? tx.returnDate : "Not Returned"}
+                        </p>
+
+                        <p class="${statusClass}">
+                            ${tx.status}
+                        </p>
+
+                        <p><b>Fine:</b> ₹${tx.fine}</p>
+
+                    </div>
+                `;
+            });
+
+        });
+
+    })
+    .catch(err => console.error(err));
+}
+
+/* ================= REGISTER ================= */
+
+function toggleRegisterPassword(){
+    const input = document.getElementById("regPassword");
+    input.type = input.type === "password" ? "text" : "password";
+}
+
+async function registerUser(){
+
+    const username =
+        document.getElementById("regUsername").value;
+
+    const password =
+        document.getElementById("regPassword").value;
+
+    const msg =
+        document.getElementById("registerMessage");
+
+    if(!username || !password){
+        msg.innerText = "Fill all fields";
+        msg.style.color = "red";
+        return;
+    }
+
+    try{
+
+        const res = await fetch(API + "/auth/register",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                username:username,
+                password:password
+            })
+        });
+
+        const text = await res.text();
+
+        if(!res.ok){
+            msg.innerText = text;
+            msg.style.color = "red";
+            return;
+        }
+
+        msg.innerText = "Registration successful! Redirecting...";
+        msg.style.color = "green";
+
+        setTimeout(()=>{
+            window.location.href="login.html";
+        },1200);
+
+    }catch{
+        msg.innerText="Server error";
+        msg.style.color="red";
+    }
+}
+
+
